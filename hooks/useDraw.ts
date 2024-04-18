@@ -104,6 +104,6 @@ export const useDraw = () => {
 		canvasRef,
 		lineColor,
 		setLineColor,
-		img
+		imgs
 	}
 }
