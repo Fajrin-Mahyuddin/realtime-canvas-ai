@@ -5,12 +5,39 @@ type Point = {
 	y: number;
 }
 
-export const useDraw = (color: string) => {
+export const useDraw = () => {
 	const canvasRef = useRef<HTMLCanvasElement>(null);
 	const prePoint = useRef<null | Point>(null);
 	const [isDraw, setDraw] = useState(false);
-	// const [lineColor, setLineColor] = useState(color); 
-	let lineColor = color
+	const [lineColor, setLineColor] = useState("#000"); 
+	const [imgs, setImg] = useState("")
+
+	const fetchImage = useCallback( async (image: string) => {
+		try {
+			const req = await fetch("https://cloud.leonardo.ai/api/rest/v1/generations-lcm",
+				{
+				method: "POST",
+				headers: {
+					"accept": " application/json",
+					"authorization": "Bearer 7b39d9cb-f896-49e3-b57c-4b346178d7a5",
+					"content-type": "application/json"
+					},
+					body: JSON.stringify({
+						"width": 512,
+						"height": 512,
+						"prompt": "Bouquet of pink roses in the garden ",
+						"style": "DYNAMIC",
+						"strength": 0.7,
+						"imageDataUrl": image
+					})
+			});
+			const res = await req.json();
+			console.log(res);
+			setImg(res.lcmGenerationJob.imageDataUrl)
+		} catch (error) {
+			console.log("Heeiiii we got trouble", error);
+		}
+	}, [])
 
 	const drawLine = useCallback((prePoint: null | Point, currentPoint: { x: number, y: number }, ctx: CanvasRenderingContext2D) => {
 		const { x, y } = currentPoint;
@@ -29,28 +56,7 @@ export const useDraw = (color: string) => {
 		ctx.beginPath()
 		ctx.arc(start.x, start.y, 2, 0, 2 * Math.PI)
 		ctx.fill();
-		if (canvasRef.current) {
-			let imgs = canvasRef.current.toDataURL();
-			fetchImage(imgs);
-		}
-
 	}, [lineColor]);
-
-	const fetchImage = async (image: string) => {
-		try {
-			const req = await fetch("https://cloud.leonardo.ai/api/rest/v1/generations-lcm", {
-				headers: {
-					"accept": " application/json",
-					"authorization": "Bearer 7b39d9cb-f896-49e3-b57c-4b346178d7a5",
-					"content-type": "application/json"
-				}
-			});
-			const res = req.json();
-			console.log(res);
-		} catch (error) {
-			console.log("Heeiiii we got trouble", error);
-		}
-	}
 
 	const mouseHandler = useCallback((e: MouseEvent) => {
 		if (!isDraw) return
@@ -61,8 +67,6 @@ export const useDraw = (color: string) => {
 		prePoint.current = currentPoint
 	}, [drawLine, isDraw])
 
-
-
 	const computeCanvasPoint = (e: MouseEvent) => {
 		const canvas = canvasRef.current;
 		if (!canvas) return;
@@ -72,28 +76,34 @@ export const useDraw = (color: string) => {
 		return { x, y }
 	}
 
+	const mouseUpHandler = useCallback(() => {
+		if (canvasRef.current) {
+			setDraw(false)
+			prePoint.current = null
+			let imgs = canvasRef.current.toDataURL("image/jpeg");
+			fetchImage(imgs);
+		}
+	}, [fetchImage])
+
 	useEffect(() => {
 		const canRef = canvasRef.current;
 		if (canRef) {
 			canRef.addEventListener("mousemove", mouseHandler);
 			canRef.addEventListener("mousedown", () => setDraw(true))
-			window.addEventListener("mouseup", () => {
-				setDraw(false)
-				prePoint.current = null
-			})
+			window.addEventListener("mouseup", mouseUpHandler)
 		}
 
 		return () => {
 			canRef?.removeEventListener("mousedown", () => { setDraw(false) });
 			canRef?.removeEventListener('mousemove', mouseHandler);
-			window.removeEventListener("mouseup", () => {
-				setDraw(false);
-				prePoint.current = null
-			})
+			window.removeEventListener("mouseup", mouseUpHandler)
 		}
-	}, [mouseHandler])
+	}, [mouseHandler, mouseUpHandler])
 
 	return {
 		canvasRef,
+		lineColor,
+		setLineColor,
+		img
 	}
 }
