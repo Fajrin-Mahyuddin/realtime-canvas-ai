@@ -1,39 +1,21 @@
 "use client"
 import { useDraw } from '@/hooks/useDraw'
-import { Box, Center } from '@chakra-ui/react'
-import React from 'react'
-
-type Point = {
-	x: number;
-	y: number;
-}
+import { Box, Center, Flex, Input } from '@chakra-ui/react'
+import React, { useState } from 'react'
 
 const CanvasPage = () => {
-	const drawLine = (prePoint: null | Point, currentPoint: { x: number, y: number }, ctx: CanvasRenderingContext2D) => {
-		const { x, y } = currentPoint;
-		let start = prePoint ?? currentPoint;
-		const lineColor = "#000";
-		const lineWidth = 5;
-
-		ctx.beginPath();
-		ctx.lineWidth = lineWidth;
-		ctx.strokeStyle = lineColor;
-
-		ctx.moveTo(start.x, start.y);
-		ctx.lineTo(x, y)
-		ctx.stroke();
-
-		ctx.fillStyle = lineColor
-		ctx.beginPath()
-		ctx.arc(start.x, start.y, 2, 0, 2 * Math.PI)
-		ctx.fill()
-	}
-
-	const { canvasRef, setDraw } = useDraw(drawLine);
+	const [color, setColor] = useState("#000")
+	const { canvasRef } = useDraw(color)
 	return (
 		<Center gap="10px" alignItems="center" minH="100vh" >
+			<Flex flexDir="column" alignItems="flex-start" justifyContent="flex-start">
+				<form action="">
+					<label htmlFor="head">Pick Colors</label>
+					<input type="color" onChange={(e) => setColor(e.currentTarget.value)} id="head" name="line-color" />
+				</form>
+			</Flex>
 			<Box width="512px" height="512px" border="1px solid black">
-				<canvas ref={canvasRef} onMouseUp={() => setDraw(false)} onMouseDown={() => setDraw(true)} width="512px" height="512px" />
+				<canvas ref={canvasRef} width="512px" height="512px" />
 			</Box>
 			<Box width="512px" height="512px" border="1px solid black">
 
